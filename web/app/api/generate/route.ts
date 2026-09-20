@@ -111,12 +111,14 @@ STRICT REQUIREMENTS:
 }
 `;
 
-    // Try primary model gemini-3.6-flash, with fallback to gemini-2.5-flash / gemini-1.5-flash for 503 high-demand spikes
-    const modelCandidates = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+    // Try primary model gemini-3.6-flash, with fallback to gemini-2.5-flash for 503 high-demand spikes
+    const modelCandidates = ['gemini-3.6-flash', 'gemini-2.5-flash'];
     let response: any = null;
+    let primaryError: any = null;
     let lastError: any = null;
 
-    for (const modelName of modelCandidates) {
+    for (let i = 0; i < modelCandidates.length; i++) {
+      const modelName = modelCandidates[i];
       try {
         response = await ai.models.generateContent({
           model: modelName,
@@ -124,13 +126,20 @@ STRICT REQUIREMENTS:
         });
         if (response && response.text) break;
       } catch (err: any) {
+        const errStatus = err.status || err.statusCode || err.response?.status;
+        console.warn(`[QuizFly API] Model ${modelName} returned status ${errStatus || 500}, trying candidate fallback...`);
+        if (i === 0) {
+          primaryError = err;
+        }
         lastError = err;
-        console.warn(`[QuizFly API] Model ${modelName} returned status ${err.status || 500}, trying candidate fallback...`);
       }
     }
 
     if (!response || !response.text) {
-      throw lastError || new Error('Gemini API is currently experiencing high demand. Please try again in a few seconds.');
+      const primaryStatus = primaryError?.status || primaryError?.statusCode || primaryError?.response?.status;
+      // If primary model returned 503 (temporary capacity limit), do not mask it with fallback 404 error
+      const errorToThrow = (primaryStatus === 503 && lastError !== primaryError) ? primaryError : (lastError || primaryError);
+      throw errorToThrow || new Error('Gemini API is currently experiencing high demand. Please try again in a few seconds.');
     }
 
     const responseText = response.text.trim();
@@ -163,9 +172,10 @@ STRICT REQUIREMENTS:
 
   } catch (err: any) {
     console.error('[QuizFly API] LLM Generation error:', err);
+    const errStatus = err.status || err.statusCode || err.response?.status || 500;
     return NextResponse.json(
       { success: false, error: err.message || 'Failed generating AI quiz with Gemini API.' },
-      { status: 500 }
+      { status: errStatus >= 400 && errStatus < 600 ? errStatus : 500 }
     );
   }
 }
