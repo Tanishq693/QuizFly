@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { Quiz } from '@/lib/types';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
-import { saveQuizToStore } from '@/app/api/quizzes/route';
+import { saveQuizToStore } from '@/lib/quizStore';
 
 export async function POST(req: NextRequest) {
   try {
