@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizFly Extension</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app" class="popup-container">
+    <!-- Top Neo-Brutalist Header -->
+    <header class="header-bar">
+      <div class="header-left">
+        <div class="logo-icon">⚡</div>
+        <span class="brand-title">QUIZ<span class="brand-accent">FLY</span></span>
+        <span class="badge-version">EXT v1.0</span>
+      </div>
+      <div id="domain-badge" class="domain-badge">
+        <span class="dot"></span>
+        <span id="domain-text">detecting...</span>
+      </div>
+    </header>
+
+    <!-- Hazard Banner Line -->
+    <div class="hazard-stripe-line"></div>
+
+    <!-- MAIN VIEW STATE CONTAINER -->
+    <main class="content-area">
+
+      <!-- STATE 1: INITIAL PREVIEW -->
+      <section id="state-preview" class="view-state active">
+        <div class="card shadow-brutal">
+          <div class="badge-row">
+            <span id="source-type-badge" class="badge badge-yellow">📄 PAGE ARTICLE</span>
+            <span id="word-count-badge" class="badge badge-gray">0 WORDS</span>
+          </div>
+
+          <h2 id="preview-title" class="article-title">Extracting page title...</h2>
+          <p id="preview-excerpt" class="excerpt-box">
+            Analyzing page text content to prepare active recall questions...
+          </p>
+
+          <div id="selection-alert" class="selection-alert hidden">
+            ⚡ <strong>Highlighted Text Detected:</strong> Quiz will focus strictly on your custom text selection.
+          </div>
+        </div>
+
+        <button id="btn-generate" class="btn btn-yellow btn-large shadow-brutal">
+          <span>⚡ GENERATE ACTIVE RECALL QUIZ</span>
+        </button>
+
+        <div class="footer-note">
+          Powered by QuizFly Active-Recall LLM Engine & Local Next.js API
+        </div>
+      </section>
+
+      <!-- STATE 2: GENERATING LOADER -->
+      <section id="state-generating" class="view-state hidden">
+        <div class="card shadow-brutal loader-card text-center">
+          <div class="spinner-gear">⚡</div>
+          <h3 class="status-heading">GENERATING QUIZ...</h3>
+          <p id="generation-log" class="log-text">Connecting to QuizFly AI engine...</p>
+
+          <!-- Hazard Progress Bar -->
+          <div class="progress-outer">
+            <div id="generation-bar" class="progress-inner hazard-stripe" style="width: 25%;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATE 3: INTERACTIVE QUIZ PLAYER -->
+      <section id="state-quiz" class="view-state hidden">
+        <!-- Quiz Status Bar -->
+        <div class="quiz-meta-bar">
+          <span id="q-counter" class="badge badge-black">Q 1 OF 3</span>
+          <span id="timer-badge" class="badge badge-blue">⏱️ 00:00</span>
+          <span id="score-tally" class="badge badge-green">SCORE: 0%</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-outer margin-b">
+          <div id="quiz-progress-bar" class="progress-inner hazard-stripe" style="width: 33%;"></div>
+        </div>
+
+        <!-- Question Prompt Card -->
+        <div class="card shadow-brutal">
+          <span class="prompt-label">ACTIVE RECALL PROMPT</span>
+          <h3 id="question-prompt" class="prompt-text">Question prompt will appear here?</h3>
+
+          <!-- Options Container -->
+          <div id="options-container" class="options-list">
+            <!-- Options dynamically injected by JS -->
+          </div>
+        </div>
+
+        <!-- Source Citation Verification Drawer -->
+        <div id="quote-drawer" class="drawer-card hidden">
+          <div class="drawer-header">
+            <span class="badge badge-purple">📖 SOURCE CONTEXT CITATION</span>
+            <span id="quote-location" class="location-tag">Location</span>
+          </div>
+          <p id="source-quote-text" class="quote-text">
+            "Exact excerpt quote from webpage will be highlighted here..."
+          </p>
+        </div>
+
+        <!-- Action Nav -->
+        <div class="action-row">
+          <button id="btn-next-q" class="btn btn-green shadow-brutal hidden">
+            <span>NEXT QUESTION →</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- STATE 4: SUMMARY & COMMUNITY SHARING -->
+      <section id="state-summary" class="view-state hidden">
+        <div class="card shadow-brutal text-center summary-card">
+          <span class="badge badge-black">QUIZ COMPLETED</span>
+          <h2 id="final-grade-title" class="grade-title">🎉 ACTIVE RECALL MASTER!</h2>
+
+          <div class="score-box-row">
+            <div class="stat-box">
+              <span class="stat-label">FINAL SCORE</span>
+              <span id="final-score-pct" class="stat-value">100%</span>
+              <span id="final-score-count" class="stat-sub">3/3 Correct</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">TIME</span>
+              <span id="final-time" class="stat-value text-blue">00:45</span>
+              <span class="stat-sub">Speed Run</span>
+            </div>
+          </div>
+
+          <div id="share-feedback-banner" class="feedback-banner hidden">
+            ✅ <strong>Link Copied to Clipboard!</strong>
+            <a id="share-online-link" href="#" target="_blank" class="link-online">View Online ↗</a>
+          </div>
+
+          <div class="summary-actions">
+            <button id="btn-share" class="btn btn-blue shadow-brutal">
+              <span>🚀 SHARE TO QUIZFLY.COM</span>
+            </button>
+            <button id="btn-retake" class="btn btn-yellow shadow-brutal">
+              <span>🔄 RETAKE QUIZ</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ERROR STATE FALLBACK -->
+      <section id="state-error" class="view-state hidden">
+        <div class="card shadow-brutal text-center error-card">
+          <span class="badge badge-pink">ERROR OCCURRED</span>
+          <h3 id="error-title" class="error-heading">COULD NOT GENERATE QUIZ</h3>
+          <p id="error-message" class="error-desc">
+            Make sure your local Next.js server is running at http://localhost:3000
+          </p>
+
+          <div class="summary-actions">
+            <button id="btn-retry" class="btn btn-yellow shadow-brutal">
+              <span>🔄 RETRY GENERATION</span>
+            </button>
+            <button id="btn-sample-quiz" class="btn btn-green shadow-brutal">
+              <span>💡 LOAD SAMPLE DEMO QUIZ</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

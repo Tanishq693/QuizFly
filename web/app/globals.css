@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-nb-bg: #FAF7EE;
+  --color-nb-card: #FFFFFF;
+  --color-nb-black: #000000;
+  --color-nb-yellow: #FFE500;
+  --color-nb-blue: #2563EB;
+  --color-nb-green: #00E599;
+  --color-nb-pink: #FF3366;
+  --color-nb-purple: #A855F7;
+  --color-nb-orange: #FF8400;
+
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  --shadow-brutal-sm: 2px 2px 0px #000000;
+  --shadow-brutal: 4px 4px 0px #000000;
+  --shadow-brutal-lg: 6px 6px 0px #000000;
+  --shadow-brutal-xl: 8px 8px 0px #000000;
+}
+
+:root {
+  --nb-bg: #FAF7EE;
+  --nb-card: #FFFFFF;
+  --nb-black: #000000;
+  --nb-yellow: #FFE500;
+  --nb-blue: #2563EB;
+  --nb-green: #00E599;
+  --nb-pink: #FF3366;
+  --nb-purple: #A855F7;
+  --nb-orange: #FF8400;
+}
+
+body {
+  background-color: var(--nb-bg);
+  color: var(--nb-black);
+  font-family: 'Space Grotesk', sans-serif;
+  min-height: 100vh;
+}
+
+/* Custom Neo-Brutalist Utility Classes */
+.brutal-grid-bg {
+  background-image: radial-gradient(#000000 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.hazard-stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    #FFE500,
+    #FFE500 12px,
+    #000000 12px,
+    #000000 24px
+  );
+}
+
+.hazard-stripe-pink {
+  background: repeating-linear-gradient(
+    -45deg,
+    #FF3366,
+    #FF3366 12px,
+    #000000 12px,
+    #000000 24px
+  );
+}
+
+/* Smooth custom scrolling & selection */
+::selection {
+  background: #FFE500;
+  color: #000000;
+}
