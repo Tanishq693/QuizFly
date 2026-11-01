@@ -8,7 +8,9 @@ import { saveQuizToStore } from '@/lib/quizStore';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    let { url, topic, text } = body;
+    let { url, topic, text, numQuestions, questionCount } = body;
+    const requestedCount = Number(numQuestions ?? questionCount ?? 5);
+    const targetCount = Math.min(10, Math.max(3, isNaN(requestedCount) ? 5 : Math.round(requestedCount)));
 
     if (!url && !text) {
       return NextResponse.json(
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest) {
       try {
         console.log(`[QuizFly Generator] Scraping article text from URL: ${url}`);
         const fetchRes = await fetch(url, {
+          signal: AbortSignal.timeout(8000),
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           }
@@ -51,6 +54,7 @@ export async function POST(req: NextRequest) {
 
           if (parsedArticle && parsedArticle.textContent) {
             articleText = parsedArticle.textContent.trim();
+            console.log(`[QuizFly Generator] Successfully extracted ${articleText.length} characters.`);
             if (parsedArticle.title && !scrapedTitle) {
               scrapedTitle = parsedArticle.title;
             }
@@ -80,7 +84,7 @@ export async function POST(req: NextRequest) {
     const safeContent = (articleText || scrapedTitle || topic || '').slice(0, 3500);
 
     const prompt = `
-You are QuizFly's active-recall AI engine. Analyze the following webpage text and generate 3 high-yield multiple-choice questions for active recall learning.
+You are QuizFly's active-recall AI engine. Analyze the following webpage text and generate exactly ${targetCount} high-yield multiple-choice questions for active recall learning.
 
 ARTICLE TITLE/TOPIC: ${scrapedTitle || topic || domain}
 SOURCE URL: ${url || domain}
@@ -89,7 +93,8 @@ ${safeContent}
 
 STRICT REQUIREMENTS:
 1. Return ONLY a raw valid JSON object with NO markdown formatting, NO backticks, NO markdown block wrappers.
-2. The JSON schema must strictly match:
+2. Generate exactly ${targetCount} unique questions in the "questions" array.
+3. The JSON schema must strictly match:
 {
   "title": "Short descriptive title for the quiz",
   "category": "Technology" | "Science" | "AI & ML" | "Web Dev" | "System Design" | "General",
@@ -111,8 +116,13 @@ STRICT REQUIREMENTS:
 }
 `;
 
-    // Try primary model gemini-3.6-flash, with fallback to gemini-2.5-flash for 503 high-demand spikes
-    const modelCandidates = ['gemini-3.6-flash', 'gemini-2.5-flash'];
+
+    // Try primary ultra-fast model gemini-3.5-flash-lite (generates in ~2s), with fallback to gemini-3.8-flash
+    const defaultCandidates = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+    const configuredModel = process.env.GEMINI_MODEL?.trim();
+    const modelCandidates = configuredModel
+      ? [configuredModel, ...defaultCandidates.filter(m => m !== configuredModel)]
+      : defaultCandidates;
     let response: any = null;
     let primaryError: any = null;
     let lastError: any = null;
@@ -120,11 +130,16 @@ STRICT REQUIREMENTS:
     for (let i = 0; i < modelCandidates.length; i++) {
       const modelName = modelCandidates[i];
       try {
+        console.log(`[QuizFly Generator] Requesting AI quiz from model "${modelName}" (${targetCount} questions)...`);
+        const modelStartTime = Date.now();
         response = await ai.models.generateContent({
           model: modelName,
           contents: prompt,
         });
-        if (response && response.text) break;
+        if (response && response.text) {
+          console.log(`[QuizFly Generator] Model "${modelName}" finished successfully in ${Date.now() - modelStartTime}ms`);
+          break;
+        }
       } catch (err: any) {
         const errStatus = err.status || err.statusCode || err.response?.status;
         console.warn(`[QuizFly API] Model ${modelName} returned status ${errStatus || 500}, trying candidate fallback...`);

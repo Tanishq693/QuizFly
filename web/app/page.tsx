@@ -34,6 +34,7 @@ export default function LandingPage() {
   const router = useRouter();
   const [quizzes, setQuizzes] = useState<Quiz[]>(MOCK_QUIZZES);
   const [urlInput, setUrlInput] = useState('');
+  const [questionCount, setQuestionCount] = useState<number>(5);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function LandingPage() {
   const GENERATION_LOGS = [
     'Connecting to source URL and fetching article context...',
     'Analyzing text structure and highlighting core thesis...',
-    'Formulating 3-5 active recall question prompts...',
+    `Formulating ${questionCount} active recall question prompts...`,
     'Synthesizing exact source quotes & page location citations...',
     'Finalizing Neo-Brutalist QuizFly bundle...'
   ];
@@ -87,7 +88,10 @@ export default function LandingPage() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlInput })
+        body: JSON.stringify({ 
+          url: urlInput,
+          numQuestions: questionCount 
+        })
       });
 
       clearInterval(logInterval);
@@ -187,6 +191,48 @@ export default function LandingPage() {
                   </>
                 )}
               </button>
+            </div>
+            {/* Number of Questions Option (Min 3 to Max 10) */}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+              <div className="inline-flex items-center gap-2.5 bg-nb-bg border-2 border-black px-3.5 py-1.5 shadow-brutal-sm">
+                <Layers className="w-4 h-4 text-black stroke-[2.5]" />
+                <span className="font-mono text-xs font-black uppercase text-black">
+                  Questions:
+                </span>
+                <input
+                  type="range"
+                  min="3"
+                  max="10"
+                  step="1"
+                  value={questionCount}
+                  onChange={(e) => setQuestionCount(Number(e.target.value))}
+                  disabled={isGenerating}
+                  className="w-24 sm:w-28 accent-black cursor-pointer"
+                  title="Select number of questions (min 3 to max 10)"
+                />
+                <span className="font-mono font-black text-xs bg-nb-yellow text-black px-2 py-0.5 border border-black min-w-[2.75rem] text-center shadow-brutal-sm">
+                  {questionCount} Qs
+                </span>
+              </div>
+
+              {/* Quick Preset Buttons (3, 5, 7, 10) */}
+              <div className="flex items-center gap-1.5">
+                {[3, 5, 7, 10].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setQuestionCount(num)}
+                    disabled={isGenerating}
+                    className={`font-mono text-xs font-black px-2.5 py-1 border-2 border-black transition-all cursor-pointer ${
+                      questionCount === num
+                        ? 'bg-black text-nb-yellow shadow-brutal-sm font-black'
+                        : 'bg-white hover:bg-nb-yellow text-black shadow-brutal-sm'
+                    }`}
+                  >
+                    {num} Qs
+                  </button>
+                ))}
+              </div>
             </div>
           </form>
 
